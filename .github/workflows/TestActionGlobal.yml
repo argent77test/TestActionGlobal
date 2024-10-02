@@ -1,35 +1,74 @@
-name: Core functionality of the test action
+name: WeiDU Mod Package Builder (core)
 
 on:
   workflow_call:
     inputs:
-      message:
-        description: 'A custom message'
-        required: true
+      # Determines the resulting archive format.
+      # Supported values: iemod, windows, linux, macos
+      type:
+        description: 'The mod package type'
+        required: false
         type: string
-        default: 'Hello World'
+        default: 'iemod'
+
+      # Determines the architecture of the included setup binary.
+      # Has currently only an effect for type=windows
+      # Supported values: amd64, x86, x86-legacy
+      architecture:
+        description: 'Architecture of the included setup binary'
+        required: false
+        type: string
+        default: 'amd64'
+
+      # Suffix to add to the mod package filename.
+      # Supported values: version, none. Anything else is treated as a literal string.
+      # - version: Uses the VERSION definition of the tp2 file of the mod if available.
+      # - none:    Indicates that no version suffix should be added.
+      suffix:
+        description: 'Version suffix added to the mod package name'
+        required: false
+        type: string
+        default: 'version'
 
     outputs:
-      result:
-        description: 'An arbitrary string'
-        value: ${{ jobs.test.outputs.result }}
+      weidu_mod_package:
+        description: 'Name of the created mod package'
 
 jobs:
-  test:
+  packager:
+    if: github.ref_type == 'tag' || github.event.release.tag_name
+
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: write
+
     outputs:
-      result: ${{ steps.print.outputs.result }}
+      weidu_mod_package: ${{ steps.create.outputs.weidu_mod_package }}
 
     steps:
+      - id: setup
+        name: Setting up configurations
+        run: |
+          git lfs uninstall
+          git config --global core.autocrlf false
+          git config --global core.ignorecase true
+
       - id: prepare
+        name: Check out repository
         uses: actions/checkout@v4
 
-      - id: print
+      - id: create
         name: Create mod package
         run: |
-          msg=$(echo ${{ inputs.message }})
-          echo "Message: $msg"
-          echo "Current directory: $PWD"
-          ls -Rl
-          echo "result='My custom result'" >>$GITHUB_OUTPUT
+          chmod +x dist/weidu_mod_package_builder.sh
+          dist/weidu_mod_package_builder.sh type=${{ inputs.type }} arch=${{ inputs.architecture }} suffix=${{ inputs.suffix }}
+
+      - id: upload
+        name: Upload asset to release
+        uses: svenstaro/upload-release-action@2.9.0
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ${{ outputs.weidu_mod_package }}
+          tag: ${{ github.ref || github.event.release.tag_name }}
+          overwrite: true
