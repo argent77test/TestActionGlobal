@@ -183,8 +183,23 @@ if [ "$archive_type" = "iemod" ]; then
 else
   archive_ext=".zip"
 fi
+
+case $archive_type in
+  windows)
+    os_prefix="win-"
+    ;;
+  linux)
+    os_prefix="lin-"
+    ;;
+  macos)
+    os_prefix="mac-"
+    ;;
+  *)
+    os_prefix=""
+esac
+
 archive_filename=$(path_get_filename "$tp2_mod_path")
-archive_filename="${archive_filename}${version_suffix}${archive_ext}"
+archive_filename="${os_prefix}${archive_filename}${version_suffix}${archive_ext}"
 archive_file_path="${root}/${archive_filename}"
 
 # Paths to add if defined:
