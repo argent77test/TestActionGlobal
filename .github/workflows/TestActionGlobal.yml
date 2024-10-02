@@ -1,0 +1,32 @@
+on:
+  workflow_call:
+    inputs:
+      message:
+        description: 'A custom message'
+        required: true
+        default: 'Hello World'
+
+    outputs:
+      result:
+        description: 'An arbitrary string'
+        value: ${{ jobs.test.outputs.result }}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    outputs:
+      result: ${{ steps.print.outputs.result }}
+
+    steps:
+      - id: prepare
+        uses: actions/checkout@v3
+
+      - id: print
+        name: Create mod package
+        run: |
+          msg=${{ inputs.message }}
+          echo "Message: $msg"
+          echo "Current directory: $PWD"
+          ls -Rl
+          echo "result='My custom result'" >>$GITHUB_OUTPUT
