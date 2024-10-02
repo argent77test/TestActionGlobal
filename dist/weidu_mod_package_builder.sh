@@ -255,4 +255,3 @@ echo "Passing mod package name to GitHub Action output..."
 echo "weidu_mod_package=$archive_filename" >> $GITHUB_OUTPUT
 
 exit 0
-
