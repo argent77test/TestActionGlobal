@@ -184,6 +184,7 @@ else
   archive_ext=".zip"
 fi
 
+# Platform-specific prefix needed to prevent overwriting package files
 case $archive_type in
   windows)
     os_prefix="win-"
