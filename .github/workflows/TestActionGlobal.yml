@@ -28,7 +28,7 @@ jobs:
       - id: print
         name: Create mod package
         run: |
-          msg=${{ inputs.message }}
+          msg=$(echo ${{ inputs.message }})
           echo "Message: $msg"
           echo "Current directory: $PWD"
           ls -Rl
