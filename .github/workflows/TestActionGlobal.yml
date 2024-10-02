@@ -33,6 +33,7 @@ on:
     outputs:
       weidu_mod_package:
         description: 'Name of the created mod package'
+        value: ${{ jobs.packager.outputs.weidu_mod_package }}
 
 jobs:
   packager:
