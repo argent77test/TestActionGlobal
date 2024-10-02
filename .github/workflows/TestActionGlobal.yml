@@ -48,22 +48,11 @@ jobs:
       weidu_mod_package: ${{ steps.create.outputs.weidu_mod_package }}
 
     steps:
-      - id: setup-win
-        name: Setting up configurations (Windows)
-        if: ${{ inputs.type == 'windows' }}
+      - id: setup
+        name: Set up git configurations
         run: |
           git lfs uninstall
           git config --global core.autocrlf false
-          git config --global core.eol crlf
-          git config --global core.ignorecase true
-
-      - id: setup-unix
-        name: Setting up configurations (non-Windows)
-        if: ${{ inputs.type != 'windows' }}
-        run: |
-          git lfs uninstall
-          git config --global core.autocrlf false
-          git config --global core.eol lf
           git config --global core.ignorecase true
 
       - id: prepare_repo
@@ -81,10 +70,6 @@ jobs:
       - id: setup_actions
         name: Set up environment variables for packager repository
         run: echo "PACKAGER_PATH=$GITHUB_WORKSPACE/weidu_packager/dist" >> $GITHUB_ENV
-
-      # - id: diagnostic
-        # name: Diagnostic output
-        # run: ls -Rla
 
       - id: create
         name: Create mod package
