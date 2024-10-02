@@ -50,7 +50,7 @@ jobs:
     steps:
       - id: setup-win
         name: Setting up configurations (Windows)
-        if: ${{ inputs.type }} == 'windows'
+        if: ${{ inputs.type == 'windows' }}
         run: |
           git lfs uninstall
           git config --global core.autocrlf false
@@ -59,7 +59,7 @@ jobs:
 
       - id: setup-unix
         name: Setting up configurations (non-Windows)
-        if: ${{ inputs.type }} != 'windows'
+        if: ${{ inputs.type != 'windows' }}
         run: |
           git lfs uninstall
           git config --global core.autocrlf false
