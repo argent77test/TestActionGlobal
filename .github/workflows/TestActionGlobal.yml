@@ -1,9 +1,12 @@
+name: Core functionality of the test action
+
 on:
   workflow_call:
     inputs:
       message:
         description: 'A custom message'
         required: true
+        type: string
         default: 'Hello World'
 
     outputs:
