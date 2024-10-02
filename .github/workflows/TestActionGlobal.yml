@@ -68,12 +68,12 @@ jobs:
           sparse-checkout: dist
 
       - id: setup_actions
-        name: Setting up variables for packager repository
-        run: echo "PACKAGER_PATH=$GITHUB_WORKSPACE/weidu_packager/TestActionGlobal/dist" >> $GITHUB_ENV
+        name: Set up environment variables for packager repository
+        run: echo "PACKAGER_PATH=$GITHUB_WORKSPACE/weidu_packager/dist" >> $GITHUB_ENV
 
-      - id: diagnostic
-        name: Diagnostic output
-        run: ls -Rla
+      # - id: diagnostic
+        # name: Diagnostic output
+        # run: ls -Rla
 
       - id: create
         name: Create mod package
