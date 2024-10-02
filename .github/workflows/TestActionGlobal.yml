@@ -71,6 +71,10 @@ jobs:
         name: Setting up variables for packager repository
         run: echo "PACKAGER_PATH=$GITHUB_WORKSPACE/weidu_packager/TestActionGlobal/dist" >> $GITHUB_ENV
 
+      - id: diagnostic
+        name: Diagnostic output
+        run: ls -Rla
+
       - id: create
         name: Create mod package
         run: |
