@@ -61,6 +61,10 @@ jobs:
         with:
           repository: argent77test/TestActionGlobal
 
+      - id: setup_actions
+        name: Setting up variables for packager repository
+        run: echo "PACKAGER_PATH=$GITHUB_WORKSPACE" >> $GITHUB_ENV
+
       - id: prepare_repo
         name: Check out repository
         uses: actions/checkout@v4
@@ -68,8 +72,8 @@ jobs:
       - id: create
         name: Create mod package
         run: |
-          chmod +x $GITHUB_WORKSPACE/TestActionGlobal/dist/weidu_mod_package_builder.sh
-          $GITHUB_WORKSPACE/TestActionGlobal/dist/weidu_mod_package_builder.sh type=${{ inputs.type }} arch=${{ inputs.architecture }} suffix=${{ inputs.suffix }}
+          chmod +x $PACKAGER_PATH/dist/weidu_mod_package_builder.sh
+          $PACKAGER_PATH/dist/weidu_mod_package_builder.sh type=${{ inputs.type }} arch=${{ inputs.architecture }} suffix=${{ inputs.suffix }}
 
       - id: upload
         name: Upload asset to release
