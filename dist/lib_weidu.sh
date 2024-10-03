@@ -53,7 +53,7 @@ download_weidu() {
   fi
 
   # Downloading WeiDU archive
-  weidu_file=${weidu_url##*/}
+  weidu_file="${weidu_url##*/}"
   weidu_path="./$weidu_file"
   curl -L --retry-delay 3 --retry 3 "$weidu_url" >"$weidu_path"
   if [ $? -ne 0 ]; then
@@ -148,8 +148,16 @@ get_tp2_version() {
       # Try string in double quotes
       v=$(cat "$1" | grep '^\s*VERSION' | sed -re 's/^\s*VERSION\s+"([^~]*).*/\1/')
       if [ -z "$v" ]; then
-        # Finally, try string in percent signs
+        # Try string in percent signs
         v=$(cat "$1" | grep '^\s*VERSION' | sed -re 's/^\s*VERSION\s+%([^~]*).*/\1/')
+        if [ -z "$v" ]; then
+          # Finally, try string without delimiters
+          v=$(cat "$1" | grep '^\s*VERSION' | sed -re 's/^\s*VERSION\s+([^ \t]*).*/\1/')
+          if echo "$v" | grep -qe '^@-\?[0-9]\+'; then
+            # Discard tra references
+            v=""
+          fi
+        fi
       fi
     fi
 
