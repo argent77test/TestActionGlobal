@@ -64,12 +64,12 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: argent77test/TestActionGlobal
-          path: weidu_packager
+          path: .weidu_packager
           sparse-checkout: dist
 
       - id: setup_actions
         name: Set up environment variables for packager repository
-        run: echo "PACKAGER_PATH=$GITHUB_WORKSPACE/weidu_packager/dist" >> $GITHUB_ENV
+        run: echo "PACKAGER_PATH=$GITHUB_WORKSPACE/.weidu_packager/dist" >> $GITHUB_ENV
 
       - id: create
         name: Create mod package
