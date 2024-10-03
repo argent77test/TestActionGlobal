@@ -37,12 +37,12 @@ on:
 
 jobs:
   packager:
-    if: github.ref_type == 'tag' || github.event.release.tag_name
+    # if: github.ref_type == 'tag' || github.event.release.tag_name
 
     runs-on: ubuntu-latest
 
-    permissions:
-      contents: write
+    # permissions:
+      # contents: write
 
     outputs:
       weidu_mod_package: ${{ steps.create.outputs.weidu_mod_package }}
@@ -74,14 +74,17 @@ jobs:
       - id: create
         name: Create mod package
         run: |
-          chmod +x $PACKAGER_PATH/weidu_mod_package_builder.sh
-          $PACKAGER_PATH/weidu_mod_package_builder.sh type=${{ inputs.type }} arch=${{ inputs.architecture }} suffix=${{ inputs.suffix }}
+          chmod +x $PACKAGER_PATH/test_script.sh
+          $PACKAGER_PATH/test_script.sh type=${{ inputs.type }} arch=${{ inputs.architecture }} suffix=${{ inputs.suffix }}
+        # run: |
+          # chmod +x $PACKAGER_PATH/weidu_mod_package_builder.sh
+          # $PACKAGER_PATH/weidu_mod_package_builder.sh type=${{ inputs.type }} arch=${{ inputs.architecture }} suffix=${{ inputs.suffix }}
 
-      - id: upload
-        name: Upload asset to release
-        uses: svenstaro/upload-release-action@2.9.0
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: ${{ steps.create.outputs.weidu_mod_package }}
-          tag: ${{ github.ref || github.event.release.tag_name }}
-          overwrite: true
+      # - id: upload
+        # name: Upload asset to release
+        # uses: svenstaro/upload-release-action@2.9.0
+        # with:
+          # repo_token: ${{ secrets.GITHUB_TOKEN }}
+          # file: ${{ steps.create.outputs.weidu_mod_package }}
+          # tag: ${{ github.ref || github.event.release.tag_name }}
+          # overwrite: true
