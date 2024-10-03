@@ -36,10 +36,14 @@ download_weidu() {
     esac
   fi
 
+  if [ -n "$weidu_arch" ]; then
+    weidu_arch="-${weidu_arch}."
+  fi
+
   # Fetching compatible WeiDU package URL
   weidu_url=""
   for url in $(curl -s "${weidu_url_base}/${weidu_tag_name}" | jq -r '.assets[].browser_download_url'); do
-    if echo "$url" | grep -F -qe "-${weidu_arch}." ; then
+    if echo "$url" | grep -F -qe "$weidu_arch" ; then
       if echo "$url" | grep -F -qe "-$weidu_os" ; then
         weidu_url="$url"
         break
