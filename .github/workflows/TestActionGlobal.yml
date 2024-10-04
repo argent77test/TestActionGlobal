@@ -36,7 +36,7 @@ on:
       # This can be used to further specialize a package name (e.g. when providing packages for
       # different architectures for the same platform).
       extra:
-        description: 'A fixed string that is appended after the package base name, but before a version string`
+        description: 'A fixed string that is appended after the package base name, but before a version string'
         required: false
         type: string
         default: ''
