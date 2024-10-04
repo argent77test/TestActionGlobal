@@ -131,7 +131,7 @@ jobs:
           $PACKAGER_PATH/weidu_mod_package_builder.sh \
               "type=${{ inputs.type }}" \
               "arch=${{ inputs.architecture }}" \
-              "suffix=${{ inputs.suffix }} \
+              "suffix=${{ inputs.suffix }}" \
               "weidu=${{ inputs.weidu_version }}" \
               "extra=${{ inputs.extra }}" \
               "naming=${{ inputs.naming }}" \
