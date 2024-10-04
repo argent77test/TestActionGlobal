@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Copyright (c) 2024 Argent77
+
 ########################################################
 # This script is not intended to be executed directly. #
 ########################################################
@@ -166,4 +168,3 @@ find_tp2() {
     fi
   done
 }
-
