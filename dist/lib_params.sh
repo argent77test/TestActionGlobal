@@ -107,6 +107,9 @@ eval_suffix() {
           elif echo "$param" | grep -qe "^'.*" ; then
             # Unwrap text in single quotes
             ret_val=$(echo "$param" | sed -re "s/^'([^']*)'.*/\1/")
+          else
+            # No delimiters detected
+            ret_val="$param"
           fi
           # Remove text after the first whitespace character
           ret_val=$(echo "$ret_val" | sed -e 's/\s.*//')
