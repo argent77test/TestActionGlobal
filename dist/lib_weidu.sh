@@ -150,7 +150,10 @@ validate_weidu_url() {
     else
       # WeiDU v248 and later
       if echo "$url" | grep -F -qe "-$os" ; then
-        if echo "$url" | grep -F -qe "-${arch}."; then
+        if [ -n "$arch" ]; then
+          arch="${arch}."
+        fi
+        if echo "$url" | grep -F -qe "-${arch}"; then
           echo "$url"
         fi
       fi
