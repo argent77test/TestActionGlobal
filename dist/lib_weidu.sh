@@ -74,11 +74,11 @@ download_weidu() {
   weidu_bin="weidu$bin_ext"
   if ! unpack_weidu "$weidu_path" "$weidu_bin" "$weidu_arch" "$weidu_tag_name" ; then
     printerr "ERROR: Could not extract WeiDU binary."
-    rm -fv "$weidu_path"
+    clean_up "$weidu_path"
     return 1
   fi
 
-  rm -fv "$weidu_path"
+  clean_up "$weidu_path"
 
   return 0
 }
@@ -126,10 +126,12 @@ validate_weidu_url() {
     fi
 
     if [ $version -le 246 ]; then
+      # WeiDU v246 (or less)
       if echo "$url" | grep -F -qe "-$os" ; then
         echo "$url"
       fi
     elif [ $version -eq 247 ]; then
+      # WeiDU v247
       if echo "$url" | grep -F -qe "-$os" ; then
         if [ "$os" = "Windows" ]; then
           # updating architecture name
@@ -146,8 +148,9 @@ validate_weidu_url() {
         fi
       fi
     else
+      # WeiDU v248 and later
       if echo "$url" | grep -F -qe "-$os" ; then
-        if echo "$url" | grep -F -qe "-$arch"; then
+        if echo "$url" | grep -F -qe "-${arch}."; then
           echo "$url"
         fi
       fi
