@@ -17,12 +17,10 @@ download_weidu() {
   else
     weidu_arch="amd64"
   fi
-  bin_ext=""
   if [ $# -gt 0 ]; then
     case $1 in
       windows)
         weidu_os="Windows"
-        bin_ext=".exe"
         ;;
       linux)
         weidu_os="Linux"
@@ -71,7 +69,6 @@ download_weidu() {
   fi
 
   # Extracting WeiDU binary
-  weidu_bin="weidu$bin_ext"
   if ! unpack_weidu "$weidu_path" "$weidu_bin" "$weidu_arch" "$weidu_tag_name" ; then
     printerr "ERROR: Could not extract WeiDU binary."
     clean_up "$weidu_path"
@@ -151,9 +148,10 @@ validate_weidu_url() {
       # WeiDU v248 and later
       if echo "$url" | grep -F -qe "-$os" ; then
         if [ -n "$arch" ]; then
+          # Needed to distinguish "x86" from "x86-legacy"
           arch="${arch}."
         fi
-        if echo "$url" | grep -F -qe "-${arch}"; then
+        if echo "$url" | grep -F -qe "-$arch"; then
           echo "$url"
         fi
       fi
@@ -171,8 +169,9 @@ get_setup_binary_name() {
     if [ "$2" = "windows" ]; then
       ext=".exe"
     fi
+    prefix=$(path_get_tp2_prefix "$1")
     name=$(path_get_tp2_name "$1")
-    name="setup-$name$ext"
+    name="$prefix$name$ext"
     echo "$name"
   fi
 }
@@ -183,8 +182,9 @@ get_setup_binary_name() {
 get_setup_command_name() {
   if [ $# -gt 1 ]; then
     if [ "$2" = "macos" ]; then
+      prefix=$(path_get_tp2_prefix "$1")
       name=$(path_get_tp2_name "$1")
-      name="setup-${name}.command"
+      name="$prefix${name}.command"
       echo "$name"
     fi
   fi
@@ -209,9 +209,9 @@ create_setup_binaries() {
     # macOS-specific
     if [ -n "$command_file" ]; then
       echo "Creating script: $command_file"
-      echo 'command_path=${0%/*}' >"$command_file"
-      echo 'cd "$command_path"' >>"$command_file"
-      echo "./${setup_file}" >>"$command_file"
+      echo 'cd "${0%/*}"' > "$command_file"
+      echo 'ScriptName="${0##*/}"' >> "$command_file"
+      echo '"./${ScriptName%.*}"' >> "$command_file"
       chmod -v 755 "$command_file"
     fi
 
