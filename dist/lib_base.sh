@@ -111,6 +111,38 @@ clean_up() {
 }
 
 
+# Cleans up and normalizes a given version string and prints it to stdout.
+# Expected parameters: version_string
+normalize_version() {
+  if [ $# -gt 0 ]; then
+    v=$(echo "$1" | xargs)
+
+    # Any whitespace between 'v' prefix and version number will be removed
+    if echo "$v" | grep -qie '^v\?\s\+[0-9]\+' ; then
+      v=$(echo "$v" | sed -re 's/^[vV]\s+/v/')
+    fi
+
+    # Removing everything after the first whitespace character
+    v=$(echo "$v" | sed -re 's/\s.*//')
+
+    # Removing illegal characters for filenames
+    v=$(normalize_filename "$v")
+
+    # Use lowercased 'v' prefix for version string
+    if echo "$v" | grep -qe '^V[0-9]\+' ; then
+      v="v${v:1}"
+    fi
+
+    # Version string uses 'v' prefix
+    if echo "$v" | grep -qe '^[0-9]\+' ; then
+      v="v$v"
+    fi
+
+    echo "$v"
+  fi
+}
+
+
 #####################################
 #     Start of script execution     #
 #####################################

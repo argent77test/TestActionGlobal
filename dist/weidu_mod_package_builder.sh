@@ -143,8 +143,9 @@ while [ -n "$tp2_result" ]; do
   # Getting version suffix
   version_suffix="$suffix"
   if [ "$suffix" = "version" ]; then
-    version_suffix=$(get_tp2_version "$tp2_file" "1")
+    version_suffix=$(get_tp2_version "$tp2_file")
   fi
+  version_suffix=$(normalize_version "$version_suffix")
   echo "Version suffix: $version_suffix"
   if [ -n "$version_suffix" ]; then
     version_suffix="-$version_suffix"

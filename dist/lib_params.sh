@@ -113,8 +113,6 @@ eval_suffix() {
             # No delimiters detected
             ret_val="$param"
           fi
-          # Remove text after the first whitespace character
-          ret_val=$(echo "$ret_val" | sed -e 's/\s.*//')
           ;;
       esac
     fi
