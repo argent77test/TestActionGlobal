@@ -21,7 +21,7 @@ printerr() {
 # Prints a lower-cased version of the specified string parameter to stdout.
 to_lower() {
   if [ $# -gt 0 ]; then
-    echo "$1" | tr '[:upper:]' '[:lower:]'
+    echo "${1,,}"
   fi
 }
 

@@ -55,6 +55,12 @@
 # Prefix string to use for platform-specific zip archive names.
 # Default: win, lin, osx (for Windows, Linux and macOS platforms respectively)
 
+# tp2_name: {string}
+# This parameter defines the tp2 filename of the mod to include in the mod package.
+# Specifying this option is only useful if a project contains multiple mods
+# (e.g. EET, EET_end, EET_gui).
+# Default: <empty string>
+
 
 # Including shellscript libraries
 DIR="${BASH_SOURCE%/*}"
