@@ -267,10 +267,10 @@ eval_prefix_lin() {
 
 
 # Prints the os-specific package name prefix to stdout, based on given parameters.
-# Default: osx
+# Default: mac
 # Pass $@ to the function.
 eval_prefix_mac() {
-  ret_val="osx"
+  ret_val="mac"
   while [ $# -gt 0 ]; do
     if echo "$1" | grep -qe '^prefix_mac=' ; then
       ret_val="${1#*=}"
@@ -370,13 +370,7 @@ fi
 
 # WeiDU versions: latest, <version number>
 weidu_version=$(eval_weidu "$@")
-if [ $archive_type = "multi" ]; then
-  # Enforcing latest WeiDU version when multi-platform type is enabled
-  weidu_version="latest"
-  echo "WeiDU version: $weidu_version (forced)"
-else
-  echo "WeiDU version: $weidu_version"
-fi
+echo "WeiDU version: $weidu_version"
 
 # WeiDU binary name
 bin_ext=$(get_bin_ext "$archive_type")

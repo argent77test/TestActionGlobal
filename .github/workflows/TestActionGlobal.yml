@@ -14,7 +14,6 @@ on:
         default: 'iemod'
 
       # Determines the architecture of the included setup binary.
-      # Has currently only an effect for type=windows
       # Supported values: amd64, x86, x86-legacy
       architecture:
         description: 'Architecture of the included setup binary'
@@ -89,10 +88,11 @@ on:
         description: 'Prefix for the mod package name that is used for the macOS-specific zip archive.'
         required: false
         type: string
-        default: 'osx'
+        default: 'mac'
 
+      # Whether setup scripts in multi-platform mod packages should auto-update the WeiDU binary.
       multi_autoupdate:
-        description: 'Defines whether to enable or disable WeiDU auto-update feature in setup scripts of multi-platform zip archives.'
+        description: 'Specifies whether to enable or disable the WeiDU auto-update feature in setup scripts of multi-platform zip archives.'
         required: false
         type: boolean
         default: true
