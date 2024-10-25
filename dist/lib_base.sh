@@ -7,7 +7,7 @@
 ########################################################
 
 # A set of characters in filenames that require special care
-special_characters_regex='[<>|*?$"/\\]'
+special_characters_regex='[<>|*?$&"/\\]'
 remove_characters_regex='[:]'
 
 # Trims leading and trailing whitespace and an optional set of characters from the
