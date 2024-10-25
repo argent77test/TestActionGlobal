@@ -7,8 +7,8 @@
 ########################################################
 
 # A set of characters in filenames that require special care
-special_characters_regex='[<>:|*?$"/\\]'
-
+special_characters_regex='[<>|*?$"/\\]'
+remove_characters_regex='[:]'
 
 # Trims leading and trailing whitespace and an optional set of characters from the
 # piped string and prints it to stdout.
@@ -36,27 +36,24 @@ to_lower() {
 normalize_filename() {
   if [ $# -gt 0 ]; then
     replace="${2:-_}"
-    echo "$1" | sed -re "s/$special_characters_regex/$replace/g" | tr -dc '[:print:]'
+    v="$1"
+    v="${v// - /-}" # purely cosmetic replacement
+    v="${v//${remove_characters_regex}/}"
+    v="${v//${special_characters_regex}/${replace}}"
+    v=$(echo "$v" | tr -d '[\000-\037]')  # remove non-printable characters
+    echo "$v"
   fi
 }
 
 
 # Decodes specially encoded characters in the URL strings and prints it to stdout.
-# Expected parameter: string
+# Expected parameter: [string]
+# Decodes the piped string content if no parameter is specified.
 decode_url_string() {
   if [ $# -gt 0 ]; then
     echo "$1" | sed -e 's/%\([0-9A-F][0-9A-F]\)/\\\\\x\1/g' | xargs echo -e
-  fi
-}
-
-
-# Returns the file extension used by executables.
-# Expected parameters: platform
-get_bin_ext() {
-  if [ $# -gt 0 ]; then
-    if [ "$1" = "windows" ]; then
-      echo ".exe"
-    fi
+  else
+    sed -e 's/%\([0-9A-F][0-9A-F]\)/\\\\\x\1/g' | xargs echo -e
   fi
 }
 
@@ -113,19 +110,25 @@ clean_up() {
 
 
 # Cleans up and normalizes a given version string and prints it to stdout.
-# Expected parameters: version_string, [replacement_for_space]
+# Expected parameters: version_string, beautify (1), [replacement_for_space]
 normalize_version() {
   if [ $# -gt 0 ]; then
-    v=$(echo "$1" | trim)
+    v="$1"
+    _beautify=$([ "${2:-1}" = "1" ] && echo "1" || echo "0")
+    _repl="$3"
 
-    # Any whitespace between 'v' prefix and version number will be removed
-    if echo "$v" | grep -qie '^v\?\s\+[0-9]\+' ; then
-      v=$(echo "$v" | sed -re 's/^[vV]\s+/v/')
+    v=$(echo "$v" | trim)
+
+    if [ $_beautify -eq 1 ]; then
+      # Any whitespace between 'v' prefix and version number will be removed
+      if echo "$v" | grep -qie '^v\?\s\+[0-9]\+' ; then
+        v=$(echo "$v" | sed -re 's/^[vV]\s+/v/')
+      fi
     fi
 
     # (Optional) Replacing whitespace characters
-    if [ $# -gt 1 ]; then
-      v=$(echo "$v" | tr -s '[:blank:]' "$2")
+    if [ -n "$_repl" ]; then
+      v=$(echo "$v" | tr -s '[:blank:]' "$_repl")
     fi
 
     # Removing everything after the first whitespace character
@@ -134,14 +137,16 @@ normalize_version() {
     # Removing illegal characters for filenames
     v=$(normalize_filename "$v")
 
-    # Use lowercased 'v' prefix for version string
-    if echo "$v" | grep -qe '^V[0-9]\+' ; then
-      v="v${v:1}"
-    fi
+    if [ $_beautify -eq 1 ]; then
+      # Use lowercased 'v' prefix for version string
+      if echo "$v" | grep -qe '^V[0-9]\+' ; then
+        v="v${v:1}"
+      fi
 
-    # Version string uses 'v' prefix
-    if echo "$v" | grep -qe '^[0-9]\+' ; then
-      v="v$v"
+      # Version string uses 'v' prefix
+      if echo "$v" | grep -qe '^[0-9]\+' ; then
+        v="v$v"
+      fi
     fi
 
     echo "$v"
@@ -154,6 +159,9 @@ normalize_version() {
 #####################################
 
 # Checking required tools
-for tool in "cat" "curl" "find" "grep" "jq" "sed" "tr" "unzip" "zip"; do
-  which $tool >/dev/null || ( printerr "ERROR: Tool not found: $tool"; exit 1 )
+for tool in "cat" "curl" "find" "grep" "head" "jq" "sed" "tr" "unzip" "zip" "zipinfo"; do
+  if ! which $tool >/dev/null 2>&1; then
+    printerr "ERROR: Tool not found: $tool"
+    exit 1
+  fi
 done

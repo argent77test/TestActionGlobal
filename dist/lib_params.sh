@@ -44,9 +44,15 @@ eval_arguments() {
         ;;
       tp2_name=*)
         ;;
+      name_fmt=*)
+        ;;
       multi_autoupdate=true | multi_autoupdate=false | multi_autoupdate=[0-1])
         ;;
       case_sensitive=true | case_sensitive=false | case_sensitive=[0-1])
+        ;;
+      beautify=true | beautify=false | beautify=[0-1])
+        ;;
+      lower_case=true | lower_case=false | lower_case[0-1])
         ;;
       *)
         printerr "ERROR: Invalid argument: $1"
@@ -185,9 +191,7 @@ eval_extra() {
     shift
   done
 
-  if [ -n "$ret_val" ]; then
-    echo "-$ret_val"
-  fi
+  echo "$ret_val"
 }
 
 
@@ -227,9 +231,9 @@ _eval_prefix() {
   if [ $# -gt 0 ]; then
     v=$(normalize_filename "$1" | trim)
     if [ -n "$v" ]; then
-      if ! echo "$v" | grep -qe '^.*-$' ; then
-        v="${v}-"
-      fi
+      while [[ "$v" =~ ^.*-$ ]]; do
+        v="${v::-1}"
+      done
     fi
     echo "$v"
   fi
@@ -308,6 +312,28 @@ eval_tp2_name() {
 }
 
 
+# Prints the package name template string to stdout, based on the given parameters.
+# Default: <%os_prefix%-><%base_name%><-%extra%><-%version%>
+eval_name_format() {
+  ret_val=""
+  while [ $# -gt 0 ]; do
+    if echo "$1" | grep -qe '^name_fmt=' ; then
+      param="${1#*=}"
+      if [ -n "$param" ]; then
+        ret_val="$param"
+      fi
+    fi
+    shift
+  done
+
+  if [ -z "$ret_val" ]; then
+    ret_val="<%os_prefix%-><%base_name%><-%extra%><-%version%>"
+  fi
+
+  echo "$ret_val"
+}
+
+
 # Prints the enabled state of autoupdate feature for multi-platform package types to stdout,
 # based on the given parameters.
 # Default: 1
@@ -316,7 +342,6 @@ eval_multi_autoupdate() {
   while [ $# -gt 0 ]; do
     if echo "$1" | grep -qe '^multi_autoupdate=' ; then
       param="${1#*=}"
-      param="${param##*/}"
       case "${param,,}" in
         false | 0)
           ret_val=0
@@ -343,7 +368,56 @@ eval_case_sensitive() {
   while [ $# -gt 0 ]; do
     if echo "$1" | grep -qe '^case_sensitive=' ; then
       param="${1#*=}"
-      param="${param##*/}"
+      case "${param,,}" in
+        false | 0)
+          ret_val=0
+          ;;
+        true | 1)
+          ret_val=1
+          ;;
+        *)
+          ;;
+      esac
+    fi
+    shift
+  done
+
+  echo "$ret_val"
+}
+
+
+# Prints whether version suffixes should be "beautified" to stdout, based on the given parameters.
+# Default: 1
+eval_beautify() {
+  ret_val=1
+  while [ $# -gt 0 ]; do
+    if echo "$1" | grep -qe '^beautify=' ; then
+      param="${1#*=}"
+      case "${param,,}" in
+        false | 0)
+          ret_val=0
+          ;;
+        true | 1)
+          ret_val=1
+          ;;
+        *)
+          ;;
+      esac
+    fi
+    shift
+  done
+
+  echo "$ret_val"
+}
+
+
+# Prints whether mod package filenames should be lowercased to stdout, based on the given parameters.
+# Default: 0
+eval_lower_case() {
+  ret_val=0
+  while [ $# -gt 0 ]; do
+    if echo "$1" | grep -qe '^lower_case=' ; then
+      param="${1#*=}"
       case "${param,,}" in
         false | 0)
           ret_val=0
@@ -401,9 +475,18 @@ fi
 weidu_version=$(eval_weidu "$@")
 echo "WeiDU version: $weidu_version"
 
-# WeiDU binary name
-bin_ext=$(get_bin_ext "$archive_type")
-weidu_bin="weidu$bin_ext"
+# Declaring empty associative array "weidu_info"
+# Elements can be initialized by the get_weidu_info() function
+declare -A weidu_info
+# Key names for the "weidu_info" array
+key_tag_name="tag_name" # GitHub tag name of the WeiDU binary release
+key_version="version"   # explicit WeiDU version (e.g. 249)
+key_stable="stable"     # indicates whether the current WeiDU version is stable (i.e. not beta or wip)
+key_arch="arch"         # architecture of the WeiDU binary
+key_url="url"           # Download URL of the WeiDU zip archive
+key_filename="filename" # Filename (without path) of the WeiDU zip archive
+key_size="size"         # File size of the WeiDU zip archive, in bytes
+key_bin="binary"        # Path of the local WeiDU binary (set by the WeiDU download function)
 
 # Optional extra string
 extra=$(eval_extra "$@")
@@ -438,8 +521,17 @@ else
   echo "Mod filter: <none>"
 fi
 
+# The package name format as a template string
+package_name_format=$(eval_name_format "$@")
+
 # Enabled state of autoupdate feature for multi-platform mod packages
 multi_autoupdate=$(eval_multi_autoupdate "$@")
 
 # Whether to preserve duplicate files in the mod that only differ by case
 case_sensitive=$(eval_case_sensitive "$@")
+
+# Whether version numbers should be beautified
+beautify=$(eval_beautify "$@")
+
+# Whether mod package filenames should be lowercased
+lower_case=$(eval_lower_case "$@")

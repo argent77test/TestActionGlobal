@@ -192,19 +192,30 @@ find_tp2() {
     fi
 
     # Checking old style tp2 location ([setup-]mymod.tp2 in root folder)
-    # Note: parsing BACKUP definitions may not handle unusual path constellations well, e.g. paths containing relative path placeholders
-    # String delimited by tilde signs (~)
-    backup_path=$(cat "$tp2_path" | grep '^\s*BACKUP\s\+~' | sed -re 's/^\s*BACKUP\s+~([^~]+)~.*/\1/')
-    if [ -z "$backup_path" ]; then
-      # String delimited by double quotes (")
-      backup_path=$(cat "$tp2_path" | grep '^\s*BACKUP\s\+"' | sed -re 's/^\s*BACKUP\s+"([^"]+)".*/\1/')
+    # Note: parsing BACKUP definitions may not handle unusual path definitions well, e.g. paths containing relative path placeholders
+    backup_path=""
+    line=$(cat "$tp2_path" | grep '^\s*BACKUP' | head -1)
+    if [ -n "$line" ]; then
+      # String can be delimited by tilde (~), quotation marks (") or percent signs (%)
+      for delim in '~' '"' '%'; do
+        pat="^[[:blank:]]*BACKUP[[:blank:]]*${delim}([^${delim}]*)${delim}?.*$"
+        if [[ "$line" =~ $pat ]]; then
+          backup_path="${BASH_REMATCH[1]}"
+          break
+        fi
+      done
+
       if [ -z "$backup_path" ]; then
-        # String delimited by percent signs (%)
-        backup_path=$(cat "$tp2_path" | grep '^\s*BACKUP\s\+%' | sed -re 's/^\s*BACKUP\s+%([^%]+)%.*/\1/')
-        if [ -z "$backup_path" ]; then
-          continue
+        # Special: String may not be delimited at all
+        pat="^[[:blank:]]*BACKUP[[:blank:]]+([^[:blank:]]*).*$"
+        if [[ "$line" =~ $pat ]]; then
+          backup_path="${BASH_REMATCH[1]}"
         fi
       fi
+    fi
+
+    if [ -z "$backup_path" ]; then
+      continue
     fi
 
     # Checking for malformed BACKUP definition
@@ -236,25 +247,29 @@ find_tp2() {
 
 # Generates the mod archive filename from the given parameters and global variables
 # and prints it to stdout.
-# Expected parameters: tp2_mod_path, version_suffix, ini_file
+# Expected parameters: tp2_mod_path, version, ini_file
 create_package_name() {
 (
-  if [ $# -gt 0 ]; then
-    tp2_mod_path="$1"
-  fi
-
-  if [ $# -gt 1 ]; then
-    version_suffix="$2"
-  fi
-
-  if [ $# -gt 2 ]; then
-    ini_file="$3"
-  fi
+  tp2_mod_path="$1"
+  version="$2"
+  ini_file="$3"
+  case "$archive_type" in
+    macos)
+      type="MacOS"
+      ;;
+    *)
+      type="${archive_type^}"
+      ;;
+  esac
 
   if [ "$archive_type" = "iemod" ]; then
     archive_ext=".iemod"
+    arch=""
   else
     archive_ext=".zip"
+    _type=$([ "$archive_type" = "multi" ] && echo "windows" || echo "$archive_type")
+    get_weidu_info "$_type" "$arch" "$weidu_version"
+    arch="${weidu_info[$key_arch]}"
   fi
 
   # Platform-specific prefix needed to prevent overwriting package files
@@ -289,9 +304,18 @@ create_package_name() {
 
     # Fetch "name" value from ini file
     if [ -n "$ini_path" -a -f "$ini_path" ]; then
-      name=$(cat "$ini_path" | grep -e '^\s*Name\s*=.*' | sed -re 's/^\s*Name\s*=(.*)/\1/' | trim "\"'")
+      name=""
+      line=$(cat "$ini_path" | grep -e '^[[:blank:]]*Name[[:blank:]]*=' | head -1)
+      if [ -n "$line" ]; then
+        pat="^[[:blank:]]*Name[[:blank:]]*=[[:blank:]]*(.*)$"
+        if [[ "$line" =~ $pat ]]; then
+          # Silently remove quotation marks in the name string
+          name="${BASH_REMATCH[1]//\"/}"
+        fi
+      fi
+      
       if [ -n "$name" ]; then
-        archive_filebase=$(normalize_filename "$name" | tr " " "-")
+        archive_filebase=$(normalize_filename "$name" | tr -s " " "-")
       fi
     fi
 
@@ -308,7 +332,9 @@ create_package_name() {
     archive_filebase="$naming"
   fi
 
-  echo "${os_prefix}${archive_filebase}${extra}${version_suffix}${archive_ext}"
+  base_name="$archive_filebase"
+  archive_filebase=$(resolve_name_template "$package_name_format")
+  echo "${archive_filebase}${archive_ext}"
 )
 }
 
@@ -345,6 +371,86 @@ remove_duplicates() {
     done
 
     clean_up "${delete_files[@]}"
+  fi
+)
+}
+
+
+# This function is called by resolve_name_template() internally.
+# It resolves placeholders in a string and prints the resolved string to stdout.
+# Expected parameters: group_string without delimiters
+resolve_template_group() {
+(
+  if [ $# -gt 0 ]; then
+    group="$1"
+    nogroup="$group"
+    group_pattern="^([^%]*)%([^%]*)%(.*)"
+    while [[ "$group" =~ $group_pattern ]]; do
+      # taking extra care not to resolve unsupported placeholder names
+      case "${BASH_REMATCH[2]}" in
+        arch | type | os_prefix | base_name | extra | version)
+          ;;
+        *)
+          BASH_REMATCH[2]="empty"
+          ;;
+      esac
+      group="${BASH_REMATCH[1]}\${${BASH_REMATCH[2]}}${BASH_REMATCH[3]}"
+      nogroup="${BASH_REMATCH[1]}${BASH_REMATCH[3]}"
+    done
+
+    # Discarding group content if placeholders resolve to empty strings
+    eval group="$group"
+    if [ "$group" = "$nogroup" ]; then
+      group=""
+    fi
+
+    echo "$group"
+  fi
+)
+}
+
+
+# Resolves a template string with placeholders and prints the result to stdout.
+# Expected parameters: template_string
+# Variables must already be defined: type, arch, os_prefix, base_name, extra, version
+resolve_name_template() {
+(
+  if [ $# -gt 0 ]; then
+    template="$1"
+
+    # Replacing escaped special characters: <, >, %
+    template="${template//\\[<>%]/-}"
+
+    # Escaping problematic characters: <space>, |, [, ], (, ), $
+    template="${template// /_}"
+    for char in '|' '[' ']' '(' ')' '$'; do
+      template="${template//${char}/\\${char}}"
+    done
+
+    # Splitting groups (<%xxx%>) into array of strings
+    groups=()
+    template_pattern="^([^<]*)<([^>]*)>(.*)"
+    while [[ "$template" =~ $template_pattern ]]; do
+      groups+=("${BASH_REMATCH[2]}")
+      template="${BASH_REMATCH[1]}::placeholder::${BASH_REMATCH[3]}"
+    done
+
+    # Resolving placeholders in strings
+    empty=""  # special placeholder
+    group_pattern="^([^%]*)%([^%]*)%(.*)"
+    for group in "${groups[@]}"; do
+      group=$(resolve_template_group "$group")
+      # Ampersand has special meaning in regex operations
+      group="${group//&/\\&}"
+
+      # Assembling resolved template
+      template="${template/::placeholder::/${group}}"
+    done
+
+    # Replacing special characters (outsource to separate function)
+    template=$(normalize_filename "$template" "-")
+
+    echo "$template"
   fi
 )
 }
